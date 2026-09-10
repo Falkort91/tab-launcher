@@ -1,5 +1,5 @@
-import { TAB_GROUP_COLORS } from './tabGroupColors'
-import type { Config, TabGroupColor } from './types'
+import { isConfig } from './configValidation'
+import type { Config } from './types'
 
 export function serializeConfig(config: Config): string {
   return JSON.stringify(config, null, 2)
@@ -18,45 +18,4 @@ export function parseConfig(text: string): Config {
   }
 
   return data
-}
-
-function isConfig(value: unknown): value is Config {
-  return Array.isArray(value) && value.every(isCategory)
-}
-
-function isCategory(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false
-  const category = value as Record<string, unknown>
-  return (
-    typeof category.id === 'string' &&
-    typeof category.name === 'string' &&
-    Array.isArray(category.subcategories) &&
-    category.subcategories.every(isSubcategory)
-  )
-}
-
-function isSubcategory(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false
-  const subcategory = value as Record<string, unknown>
-  return (
-    typeof subcategory.id === 'string' &&
-    typeof subcategory.name === 'string' &&
-    isTabGroupColor(subcategory.color) &&
-    Array.isArray(subcategory.links) &&
-    subcategory.links.every(isLink)
-  )
-}
-
-function isTabGroupColor(value: unknown): value is TabGroupColor {
-  return typeof value === 'string' && (TAB_GROUP_COLORS as string[]).includes(value)
-}
-
-function isLink(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false
-  const link = value as Record<string, unknown>
-  return (
-    typeof link.id === 'string' &&
-    typeof link.label === 'string' &&
-    typeof link.url === 'string'
-  )
 }
