@@ -18,16 +18,17 @@ export const DEFAULT_CONFIG: Config = [
     ],
   },
   {
-    id: 'gaming',
-    name: 'Gaming',
+    id: 'tech-watch',
+    name: 'Veille tech',
     subcategories: [
       {
-        id: 'gaming-wow',
-        name: 'World of Warcraft',
-        color: 'purple',
+        id: 'tech-watch-dev',
+        name: 'Actualités & Docs',
+        color: 'green',
         links: [
-          { id: 'wow-armory', label: 'Armory', url: 'https://worldofwarcraft.com/en-us/game/pc/character' },
-          { id: 'wow-wowhead', label: 'Wowhead', url: 'https://www.wowhead.com/' },
+          { id: 'tech-hn', label: 'Hacker News', url: 'https://news.ycombinator.com/' },
+          { id: 'tech-mdn', label: 'MDN Web Docs', url: 'https://developer.mozilla.org/' },
+          { id: 'tech-chrome-ext', label: 'Chrome Extensions Docs', url: 'https://developer.chrome.com/docs/extensions/' },
         ],
       },
     ],

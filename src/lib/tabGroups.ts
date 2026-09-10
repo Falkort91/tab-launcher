@@ -1,9 +1,9 @@
-import type { Subcategory } from './types'
+import type { Subcategory, TabGroupColor } from './types'
 
 export interface TabGroupPlan {
   urls: string[]
   groupTitle: string
-  groupColor: chrome.tabGroups.ColorEnum
+  groupColor: TabGroupColor
 }
 
 export function buildTabGroupPlan(subcategory: Subcategory): TabGroupPlan {
@@ -22,6 +22,9 @@ export async function openTabGroup(subcategory: Subcategory): Promise<void> {
   const tabIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined)
   if (tabIds.length === 0) return
 
-  const groupId = await chrome.tabs.group({ tabIds })
+  // tabIds contient au moins 1 élément grâce au garde ci-dessus, mais le type de
+  // chrome.tabs.group exige un tuple non-vide, ce qu'un simple check .length ne
+  // permet pas à TypeScript de déduire.
+  const groupId = await chrome.tabs.group({ tabIds: tabIds as [number, ...number[]] })
   await chrome.tabGroups.update(groupId, { title: plan.groupTitle, color: plan.groupColor })
 }
