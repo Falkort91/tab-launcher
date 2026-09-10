@@ -11,9 +11,9 @@ import {
 } from '../lib/config'
 import { parseConfig, serializeConfig } from '../lib/importExport'
 import { getConfig, saveConfig } from '../lib/storage'
-import type { Category, Config, LinkItem, Subcategory } from '../lib/types'
+import type { Category, Config, LinkItem, Subcategory, TabGroupColor } from '../lib/types'
 
-const TAB_GROUP_COLORS: chrome.tabGroups.ColorEnum[] = [
+const TAB_GROUP_COLORS: TabGroupColor[] = [
   'grey',
   'blue',
   'red',
@@ -159,7 +159,7 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
   colorSelect.addEventListener('change', () => {
     void persist(
       updateSubcategory(config, categoryId, subcategory.id, {
-        color: colorSelect.value as chrome.tabGroups.ColorEnum,
+        color: colorSelect.value as TabGroupColor,
       }),
     )
   })
