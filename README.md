@@ -29,6 +29,22 @@ configurable** depuis la page d'options (ajout/édition/suppression de
 catégories, sous-catégories et liens) — rien n'est codé en dur côté
 utilisateur final.
 
+## Installation (sans compiler)
+
+Pour simplement essayer l'extension, sans toucher au code :
+
+1. Télécharge le zip de la [dernière release](https://github.com/Falkort91/tab-launcher/releases/latest).
+2. Décompresse-le dans un dossier (pas besoin d'installer Node ni de lancer de commande).
+3. `chrome://extensions` dans la barre d'adresse.
+4. Active le **"Mode développeur"** (interrupteur en haut à droite).
+5. Clique sur **"Charger l'extension non empaquetée"** → sélectionne le dossier décompressé.
+
+L'extension apparaît dans la barre d'outils Chrome, prête à l'emploi avec les
+catégories de démo.
+
+> Installation en un clic impossible en dehors du Chrome Web Store — c'est une
+> restriction de Chrome, pas une limite de cette extension.
+
 ## Stack
 
 TypeScript · Vite · [`@crxjs/vite-plugin`](https://crxjs.dev/vite-plugin) · Vitest · ESLint
