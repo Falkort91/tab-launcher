@@ -9,6 +9,7 @@ import {
   updateLink,
   updateSubcategory,
 } from '../lib/config'
+import { parseConfig, serializeConfig } from '../lib/importExport'
 import { getConfig, saveConfig } from '../lib/storage'
 import type { Category, Config, LinkItem, Subcategory } from '../lib/types'
 
@@ -38,6 +39,11 @@ async function persist(next: Config): Promise<void> {
 function render(): void {
   if (!app) return
   app.innerHTML = ''
+
+  const toolbar = document.createElement('div')
+  toolbar.className = 'toolbar'
+  toolbar.append(renderExportButton(), renderImportButton())
+  app.append(toolbar)
 
   const layout = document.createElement('div')
   layout.className = 'layout'
@@ -263,6 +269,54 @@ function renderAddLinkForm(categoryId: string, subcategoryId: string): HTMLEleme
   })
 
   return form
+}
+
+function renderExportButton(): HTMLElement {
+  const button = document.createElement('button')
+  button.textContent = 'Exporter (JSON)'
+  button.addEventListener('click', () => {
+    const blob = new Blob([serializeConfig(config)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'tab-launcher-config.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  })
+  return button
+}
+
+function renderImportButton(): HTMLElement {
+  const label = document.createElement('label')
+  label.className = 'import-button'
+  label.textContent = 'Importer (JSON)'
+
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'application/json'
+  input.hidden = true
+  input.addEventListener('change', () => {
+    const file = input.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      try {
+        const text = String(reader.result)
+        const imported = parseConfig(text)
+        if (!confirm('Remplacer la configuration actuelle par ce fichier ?')) return
+        selectedCategoryId = null
+        void persist(imported)
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Import impossible.')
+      }
+    })
+    reader.readAsText(file)
+    input.value = ''
+  })
+
+  label.append(input)
+  return label
 }
 
 async function init(): Promise<void> {
