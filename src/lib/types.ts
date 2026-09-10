@@ -1,3 +1,5 @@
+export type TabGroupColor = `${chrome.tabGroups.Color}`
+
 export interface LinkItem {
   id: string
   label: string
@@ -7,7 +9,7 @@ export interface LinkItem {
 export interface Subcategory {
   id: string
   name: string
-  color: chrome.tabGroups.ColorEnum
+  color: TabGroupColor
   links: LinkItem[]
 }
 

@@ -1,5 +1,5 @@
 import { generateId } from './id'
-import type { Category, Config, LinkItem, Subcategory } from './types'
+import type { Category, Config, LinkItem, Subcategory, TabGroupColor } from './types'
 
 export function addCategory(config: Config, name: string): Config {
   const category: Category = { id: generateId(), name, subcategories: [] }
@@ -23,7 +23,7 @@ export function deleteCategory(config: Config, categoryId: string): Config {
 export function addSubcategory(
   config: Config,
   categoryId: string,
-  input: { name: string; color: chrome.tabGroups.ColorEnum },
+  input: { name: string; color: TabGroupColor },
 ): Config {
   const subcategory: Subcategory = { id: generateId(), name: input.name, color: input.color, links: [] }
   return config.map((category) =>
