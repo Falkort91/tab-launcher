@@ -11,19 +11,8 @@ import {
 } from '../lib/config'
 import { parseConfig, serializeConfig } from '../lib/importExport'
 import { getConfig, saveConfig } from '../lib/storage'
-import type { Category, Config, LinkItem, Subcategory, TabGroupColor } from '../lib/types'
-
-const TAB_GROUP_COLORS: TabGroupColor[] = [
-  'grey',
-  'blue',
-  'red',
-  'yellow',
-  'green',
-  'pink',
-  'purple',
-  'cyan',
-  'orange',
-]
+import { TAB_GROUP_COLOR_HEX, TAB_GROUP_COLORS } from '../lib/tabGroupColors'
+import type { Category, Config, LinkItem, Subcategory } from '../lib/types'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
@@ -40,10 +29,20 @@ function render(): void {
   if (!app) return
   app.innerHTML = ''
 
+  const header = document.createElement('div')
+  header.className = 'page-header'
+
+  const title = document.createElement('span')
+  title.className = 'page-title'
+  title.textContent = 'Tab Launcher'
+  header.append(title)
+
   const toolbar = document.createElement('div')
   toolbar.className = 'toolbar'
   toolbar.append(renderExportButton(), renderImportButton())
-  app.append(toolbar)
+  header.append(toolbar)
+
+  app.append(header)
 
   const layout = document.createElement('div')
   layout.className = 'layout'
@@ -97,7 +96,10 @@ function renderDetail(): HTMLElement {
 
   const category = config.find((c) => c.id === selectedCategoryId)
   if (!category) {
-    detail.textContent = 'Sélectionne une catégorie à gauche.'
+    const empty = document.createElement('div')
+    empty.className = 'empty-state'
+    empty.textContent = 'Sélectionne une catégorie à gauche, ou crée-en une nouvelle.'
+    detail.append(empty)
     return detail
   }
 
@@ -148,21 +150,19 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
     void persist(updateSubcategory(config, categoryId, subcategory.id, { name: nameInput.value.trim() }))
   })
 
-  const colorSelect = document.createElement('select')
+  const colorSwatches = document.createElement('div')
+  colorSwatches.className = 'color-swatches'
   for (const color of TAB_GROUP_COLORS) {
-    const option = document.createElement('option')
-    option.value = color
-    option.textContent = color
-    option.selected = color === subcategory.color
-    colorSelect.append(option)
+    const swatch = document.createElement('button')
+    swatch.type = 'button'
+    swatch.className = color === subcategory.color ? 'color-swatch selected' : 'color-swatch'
+    swatch.style.background = TAB_GROUP_COLOR_HEX[color]
+    swatch.title = color
+    swatch.addEventListener('click', () => {
+      void persist(updateSubcategory(config, categoryId, subcategory.id, { color }))
+    })
+    colorSwatches.append(swatch)
   }
-  colorSelect.addEventListener('change', () => {
-    void persist(
-      updateSubcategory(config, categoryId, subcategory.id, {
-        color: colorSelect.value as TabGroupColor,
-      }),
-    )
-  })
 
   const deleteButton = document.createElement('button')
   deleteButton.textContent = 'Supprimer'
@@ -174,7 +174,7 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
 
   const header = document.createElement('div')
   header.className = 'subcategory-header'
-  header.append(nameInput, colorSelect, deleteButton)
+  header.append(nameInput, colorSwatches, deleteButton)
   section.append(header)
 
   const linkList = document.createElement('ul')
