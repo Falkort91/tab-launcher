@@ -1,4 +1,5 @@
-import type { Config } from './types'
+import { TAB_GROUP_COLORS } from './tabGroupColors'
+import type { Config, TabGroupColor } from './types'
 
 export function serializeConfig(config: Config): string {
   return JSON.stringify(config, null, 2)
@@ -40,10 +41,14 @@ function isSubcategory(value: unknown): boolean {
   return (
     typeof subcategory.id === 'string' &&
     typeof subcategory.name === 'string' &&
-    typeof subcategory.color === 'string' &&
+    isTabGroupColor(subcategory.color) &&
     Array.isArray(subcategory.links) &&
     subcategory.links.every(isLink)
   )
+}
+
+function isTabGroupColor(value: unknown): value is TabGroupColor {
+  return typeof value === 'string' && (TAB_GROUP_COLORS as string[]).includes(value)
 }
 
 function isLink(value: unknown): boolean {

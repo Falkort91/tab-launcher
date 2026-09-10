@@ -1,7 +1,7 @@
 import { TAB_GROUP_COLOR_HEX } from '../lib/tabGroupColors'
 import { getConfig } from '../lib/storage'
 import { openTabGroup } from '../lib/tabGroups'
-import type { Category } from '../lib/types'
+import type { Category, Subcategory } from '../lib/types'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
@@ -93,14 +93,24 @@ function renderSubcategories(category: Category): void {
 
     button.append(dot, label, meta)
     button.addEventListener('click', () => {
-      void openTabGroup(subcategory)
-      window.close()
+      void handleOpenTabGroup(subcategory)
     })
     item.append(button)
     list.append(item)
   }
 
   app.append(list)
+}
+
+async function handleOpenTabGroup(subcategory: Subcategory): Promise<void> {
+  try {
+    await openTabGroup(subcategory)
+  } catch (error) {
+    console.error('[tab-launcher] failed to open tab group', error)
+    alert("Impossible d'ouvrir ce groupe d'onglets. Réessaie.")
+    return
+  }
+  window.close()
 }
 
 const SETTINGS_ICON_SVG = `

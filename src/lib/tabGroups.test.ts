@@ -31,16 +31,18 @@ describe('buildTabGroupPlan', () => {
 describe('openTabGroup', () => {
   const tabsCreate = vi.fn()
   const tabsGroup = vi.fn()
+  const tabsUpdate = vi.fn()
   const tabGroupsUpdate = vi.fn()
 
   beforeEach(() => {
     let nextId = 1
     tabsCreate.mockReset().mockImplementation(async () => ({ id: nextId++ }))
     tabsGroup.mockReset().mockResolvedValue(42)
+    tabsUpdate.mockReset().mockResolvedValue(undefined)
     tabGroupsUpdate.mockReset().mockResolvedValue(undefined)
 
     vi.stubGlobal('chrome', {
-      tabs: { create: tabsCreate, group: tabsGroup },
+      tabs: { create: tabsCreate, group: tabsGroup, update: tabsUpdate },
       tabGroups: { update: tabGroupsUpdate },
     })
   })
@@ -49,7 +51,7 @@ describe('openTabGroup', () => {
     vi.unstubAllGlobals()
   })
 
-  it('creates one tab per link, groups them, and names/colors the group', async () => {
+  it('creates one inactive tab per link, groups them, names/colors the group, and activates the last tab', async () => {
     const subcategory: Subcategory = {
       id: 'sub1',
       name: 'WoW',
@@ -63,10 +65,11 @@ describe('openTabGroup', () => {
     await openTabGroup(subcategory)
 
     expect(tabsCreate).toHaveBeenCalledTimes(2)
-    expect(tabsCreate).toHaveBeenNthCalledWith(1, { url: 'https://wowhead.com' })
-    expect(tabsCreate).toHaveBeenNthCalledWith(2, { url: 'https://worldofwarcraft.com' })
+    expect(tabsCreate).toHaveBeenNthCalledWith(1, { url: 'https://wowhead.com', active: false })
+    expect(tabsCreate).toHaveBeenNthCalledWith(2, { url: 'https://worldofwarcraft.com', active: false })
     expect(tabsGroup).toHaveBeenCalledWith({ tabIds: [1, 2] })
     expect(tabGroupsUpdate).toHaveBeenCalledWith(42, { title: 'WoW', color: 'purple' })
+    expect(tabsUpdate).toHaveBeenCalledWith(2, { active: true })
   })
 
   it('does nothing when the subcategory has no links', async () => {
@@ -76,5 +79,6 @@ describe('openTabGroup', () => {
 
     expect(tabsCreate).not.toHaveBeenCalled()
     expect(tabsGroup).not.toHaveBeenCalled()
+    expect(tabsUpdate).not.toHaveBeenCalled()
   })
 })

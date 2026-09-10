@@ -36,4 +36,11 @@ describe('parseConfig', () => {
     const broken = [{ id: 'c1', name: 'X', subcategories: [{ id: 's1', name: 'Y', color: 'grey', links: [{ id: 'l1' }] }] }]
     expect(() => parseConfig(JSON.stringify(broken))).toThrow()
   })
+
+  it('throws when a subcategory color is not a valid Chrome tab group color', () => {
+    const broken = [
+      { id: 'c1', name: 'X', subcategories: [{ id: 's1', name: 'Y', color: 'teal', links: [] }] },
+    ]
+    expect(() => parseConfig(JSON.stringify(broken))).toThrow()
+  })
 })

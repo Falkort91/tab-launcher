@@ -1,0 +1,22 @@
+:root {
+  --ink: #12172a;
+  --surface: #1c2140;
+  --surface-hover: #262c52;
+  --border: #2a3060;
+  --accent-1: #7c6bff;
+  --accent-2: #4f8eff;
+  --text: #f3f4fa;
+  --text-muted: #9ba3c9;
+  --danger: #f2665a;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ink: #f7f7fb;
+    --surface: #ffffff;
+    --surface-hover: #f0f1f8;
+    --border: #e2e4f0;
+    --text: #12172a;
+    --text-muted: #5b6284;
+  }
+}

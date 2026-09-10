@@ -123,7 +123,12 @@ function renderCategoryHeader(category: Category): HTMLElement {
   nameInput.className = 'category-name'
   nameInput.value = category.name
   nameInput.addEventListener('change', () => {
-    void persist(updateCategory(config, category.id, { name: nameInput.value.trim() }))
+    const name = nameInput.value.trim()
+    if (!name) {
+      render()
+      return
+    }
+    void persist(updateCategory(config, category.id, { name }))
   })
 
   const deleteButton = document.createElement('button')
@@ -147,7 +152,12 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
   nameInput.type = 'text'
   nameInput.value = subcategory.name
   nameInput.addEventListener('change', () => {
-    void persist(updateSubcategory(config, categoryId, subcategory.id, { name: nameInput.value.trim() }))
+    const name = nameInput.value.trim()
+    if (!name) {
+      render()
+      return
+    }
+    void persist(updateSubcategory(config, categoryId, subcategory.id, { name }))
   })
 
   const colorSwatches = document.createElement('div')
@@ -196,14 +206,24 @@ function renderLink(categoryId: string, subcategoryId: string, link: LinkItem): 
   labelInput.type = 'text'
   labelInput.value = link.label
   labelInput.addEventListener('change', () => {
-    void persist(updateLink(config, categoryId, subcategoryId, link.id, { label: labelInput.value.trim() }))
+    const label = labelInput.value.trim()
+    if (!label) {
+      render()
+      return
+    }
+    void persist(updateLink(config, categoryId, subcategoryId, link.id, { label }))
   })
 
   const urlInput = document.createElement('input')
   urlInput.type = 'url'
   urlInput.value = link.url
   urlInput.addEventListener('change', () => {
-    void persist(updateLink(config, categoryId, subcategoryId, link.id, { url: urlInput.value.trim() }))
+    const url = urlInput.value.trim()
+    if (!url) {
+      render()
+      return
+    }
+    void persist(updateLink(config, categoryId, subcategoryId, link.id, { url }))
   })
 
   const deleteButton = document.createElement('button')
