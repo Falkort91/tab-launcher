@@ -35,8 +35,3 @@ npm run dev
 Ce repo suit gitflow : `main` (releases), `develop` (intégration),
 `feature/*` / `release/*` / `hotfix/*` pour le travail en cours. `main` et
 `develop` sont protégées (PR obligatoire, pas de force-push).
-
-## Documentation
-
-- Design : `docs/superpowers/specs/2026-09-10-tab-launcher-design.md`
-- Plans d'implémentation : `docs/superpowers/plans/`
