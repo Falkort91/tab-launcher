@@ -34,9 +34,8 @@ describe('openTabGroup', () => {
   const tabsUpdate = vi.fn()
   const tabGroupsUpdate = vi.fn()
 
-  beforeEach(() => {
-    let nextId = 1
-    tabsCreate.mockReset().mockImplementation(async () => ({ id: nextId++ }))
+  function stubChrome(createImpl: () => Promise<{ id: number | undefined }>) {
+    tabsCreate.mockReset().mockImplementation(createImpl)
     tabsGroup.mockReset().mockResolvedValue(42)
     tabsUpdate.mockReset().mockResolvedValue(undefined)
     tabGroupsUpdate.mockReset().mockResolvedValue(undefined)
@@ -45,6 +44,11 @@ describe('openTabGroup', () => {
       tabs: { create: tabsCreate, group: tabsGroup, update: tabsUpdate },
       tabGroups: { update: tabGroupsUpdate },
     })
+  }
+
+  beforeEach(() => {
+    let nextId = 1
+    stubChrome(async () => ({ id: nextId++ }))
   })
 
   afterEach(() => {
@@ -72,13 +76,41 @@ describe('openTabGroup', () => {
     expect(tabsUpdate).toHaveBeenCalledWith(2, { active: true })
   })
 
-  it('does nothing when the subcategory has no links', async () => {
+  it('throws when the subcategory has no links', async () => {
     const subcategory: Subcategory = { id: 'sub2', name: 'Empty', color: 'grey', links: [] }
 
-    await openTabGroup(subcategory)
-
+    await expect(openTabGroup(subcategory)).rejects.toThrow('aucun lien')
     expect(tabsCreate).not.toHaveBeenCalled()
+  })
+
+  it('throws when no created tab has a usable id', async () => {
+    stubChrome(async () => ({ id: undefined }))
+    const subcategory: Subcategory = {
+      id: 'sub3',
+      name: 'Broken',
+      color: 'grey',
+      links: [{ id: 'l1', label: 'X', url: 'https://x.com' }],
+    }
+
+    await expect(openTabGroup(subcategory)).rejects.toThrow()
     expect(tabsGroup).not.toHaveBeenCalled()
-    expect(tabsUpdate).not.toHaveBeenCalled()
+  })
+
+  it('groups the valid tabs but still throws when some tabs lack an id', async () => {
+    let call = 0
+    stubChrome(async () => (call++ === 0 ? { id: 1 } : { id: undefined }))
+    const subcategory: Subcategory = {
+      id: 'sub4',
+      name: 'Partial',
+      color: 'grey',
+      links: [
+        { id: 'l1', label: 'A', url: 'https://a.com' },
+        { id: 'l2', label: 'B', url: 'https://b.com' },
+      ],
+    }
+
+    await expect(openTabGroup(subcategory)).rejects.toThrow("n'ont pas pu être ajoutés")
+    expect(tabsGroup).toHaveBeenCalledWith({ tabIds: [1] })
+    expect(tabGroupsUpdate).toHaveBeenCalled()
   })
 })

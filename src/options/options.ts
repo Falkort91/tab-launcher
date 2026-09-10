@@ -223,6 +223,15 @@ function renderLink(categoryId: string, subcategoryId: string, link: LinkItem): 
       render()
       return
     }
+    // Un input hors <form> ne déclenche jamais la validation HTML5 native à la
+    // soumission (contrairement au formulaire d'ajout) — on la déclenche à la main.
+    // Pas de render() ici : on laisse la valeur tapée visible (avec le message
+    // natif du navigateur dessus) pour que l'utilisateur puisse la corriger, au
+    // lieu de la faire disparaître en reconstruisant tout le DOM.
+    if (!urlInput.checkValidity()) {
+      urlInput.reportValidity()
+      return
+    }
     void persist(updateLink(config, categoryId, subcategoryId, link.id, { url }))
   })
 

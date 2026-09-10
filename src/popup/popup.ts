@@ -1,6 +1,6 @@
+import type { ExtensionMessage, MessageResponse } from '../background/messages'
 import { TAB_GROUP_COLOR_HEX } from '../lib/tabGroupColors'
 import { getConfig } from '../lib/storage'
-import { openTabGroup } from '../lib/tabGroups'
 import type { Category, Subcategory } from '../lib/types'
 
 const app = document.querySelector<HTMLDivElement>('#app')
@@ -103,14 +103,27 @@ function renderSubcategories(category: Category): void {
 }
 
 async function handleOpenTabGroup(subcategory: Subcategory): Promise<void> {
-  try {
-    await openTabGroup(subcategory)
-  } catch (error) {
-    console.error('[tab-launcher] failed to open tab group', error)
-    alert("Impossible d'ouvrir ce groupe d'onglets. Réessaie.")
+  // La vraie ouverture des onglets tourne dans le service worker (message passing),
+  // pas ici : le popup peut perdre le focus et être fermé par Chrome à tout moment,
+  // ce qui couperait la séquence si elle tournait dans ce document.
+  const message: ExtensionMessage = { type: 'openTabGroup', subcategory }
+  const response = (await chrome.runtime.sendMessage(message)) as MessageResponse
+
+  if (!response.ok) {
+    showError(response.error ?? "Impossible d'ouvrir ce groupe d'onglets.")
     return
   }
   window.close()
+}
+
+function showError(message: string): void {
+  if (!app) return
+  app.querySelector('.error-banner')?.remove()
+
+  const banner = document.createElement('p')
+  banner.className = 'error-banner'
+  banner.textContent = message
+  app.append(banner)
 }
 
 const SETTINGS_ICON_SVG = `
