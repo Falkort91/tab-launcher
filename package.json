@@ -1,0 +1,33 @@
+{
+  "name": "tab-launcher",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Extension Chrome (Manifest V3) pour ouvrir des onglets pré-configurés, groupés par catégorie.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Falkort91/tab-launcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Falkort91/tab-launcher/issues"
+  },
+  "homepage": "https://github.com/Falkort91/tab-launcher#readme",
+  "license": "ISC",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@eslint/js": "^10.0.1",
+    "@types/chrome": "^0.2.9",
+    "eslint": "^10.10.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}
