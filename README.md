@@ -19,8 +19,15 @@ une première expérience concrète sur le sujet.
   détail éditable à droite).
 - **Export / Import JSON** : sauvegarde la configuration dans un fichier, ou la
   restaure (remplace intégralement la configuration existante).
+- **Suggestion IA** (page d'options) : le bouton "✨ Suggérer" sur une
+  sous-catégorie appelle un LLM (via [OpenRouter](https://openrouter.ai)) avec
+  les liens déjà ajoutés, et propose un nom et une couleur de groupe. Nécessite
+  une clé API OpenRouter, saisie via le bouton "Clé API IA" et stockée
+  localement (jamais incluse dans l'export JSON).
 - Aucune donnée sensible stockée — pas de credentials, pas de connexion
   automatique aux comptes (voir la spec pour la justification de ce choix).
+  Exception : la clé API OpenRouter ci-dessus, propre à l'utilisateur et
+  utilisée uniquement pour ses propres appels IA.
 
 À la première installation, deux catégories d'exemple sont créées ("Recherche
 d'emploi", "Veille tech") pour montrer l'extension en action immédiatement.

@@ -1,3 +1,5 @@
+import { suggestGroupMeta } from '../lib/ai'
+import { clearAiSettings, getAiSettings, saveAiSettings } from '../lib/aiSettings'
 import {
   addCategory,
   addLink,
@@ -12,12 +14,14 @@ import {
 import { parseConfig, serializeConfig } from '../lib/importExport'
 import { getConfig, saveConfig } from '../lib/storage'
 import { TAB_GROUP_COLOR_HEX, TAB_GROUP_COLORS } from '../lib/tabGroupColors'
+import type { AiSettings } from '../lib/aiSettings'
 import type { Category, Config, LinkItem, Subcategory } from '../lib/types'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
 let config: Config = []
 let selectedCategoryId: string | null = null
+let aiSettings: AiSettings | null = null
 
 async function persist(next: Config): Promise<void> {
   config = next
@@ -39,7 +43,7 @@ function render(): void {
 
   const toolbar = document.createElement('div')
   toolbar.className = 'toolbar'
-  toolbar.append(renderExportButton(), renderImportButton())
+  toolbar.append(renderExportButton(), renderImportButton(), renderAiKeyButton())
   header.append(toolbar)
 
   app.append(header)
@@ -160,6 +164,15 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
     void persist(updateSubcategory(config, categoryId, subcategory.id, { name }))
   })
 
+  const suggestButton = document.createElement('button')
+  suggestButton.type = 'button'
+  suggestButton.className = 'ai-suggest-button'
+  suggestButton.textContent = '✨ Suggérer'
+  suggestButton.title = 'Suggérer un nom et une couleur avec l’IA, à partir des liens de cette sous-catégorie'
+  suggestButton.addEventListener('click', () => {
+    void handleSuggest(categoryId, subcategory, suggestButton)
+  })
+
   const colorSwatches = document.createElement('div')
   colorSwatches.className = 'color-swatches'
   for (const color of TAB_GROUP_COLORS) {
@@ -184,7 +197,7 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
 
   const header = document.createElement('div')
   header.className = 'subcategory-header'
-  header.append(nameInput, colorSwatches, deleteButton)
+  header.append(nameInput, suggestButton, colorSwatches, deleteButton)
   section.append(header)
 
   const linkList = document.createElement('ul')
@@ -244,6 +257,71 @@ function renderLink(categoryId: string, subcategoryId: string, link: LinkItem): 
 
   item.append(labelInput, urlInput, deleteButton)
   return item
+}
+
+async function handleSuggest(
+  categoryId: string,
+  subcategory: Subcategory,
+  button: HTMLButtonElement,
+): Promise<void> {
+  if (!aiSettings) {
+    alert('Renseigne d’abord une clé API IA (bouton "Clé API IA" en haut de la page).')
+    return
+  }
+  if (subcategory.links.length === 0) {
+    alert('Ajoute au moins un lien avant de demander une suggestion.')
+    return
+  }
+
+  // Pas de render() pendant l'appel : on désactive juste le bouton concerné, pour
+  // ne pas perdre le focus/la saisie en cours ailleurs dans le formulaire pendant
+  // l'attente réseau.
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = '…'
+
+  try {
+    const suggestion = await suggestGroupMeta(aiSettings.apiKey, subcategory.links)
+    await persist(
+      updateSubcategory(config, categoryId, subcategory.id, {
+        name: suggestion.name,
+        color: suggestion.color,
+      }),
+    )
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'Suggestion IA impossible.')
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
+function renderAiKeyButton(): HTMLElement {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.textContent = aiSettings ? 'Clé API IA ✓' : 'Clé API IA'
+  button.title = 'Clé API OpenRouter utilisée pour la suggestion de nom/couleur par IA'
+  button.addEventListener('click', () => {
+    void handleSetAiKey()
+  })
+  return button
+}
+
+async function handleSetAiKey(): Promise<void> {
+  const input = prompt(
+    'Clé API OpenRouter (https://openrouter.ai/keys).\nLaisse le champ vide puis valide pour supprimer la clé enregistrée.',
+    aiSettings?.apiKey ?? '',
+  )
+  if (input === null) return // Boîte de dialogue annulée : on ne change rien.
+
+  const trimmed = input.trim()
+  if (!trimmed) {
+    await clearAiSettings()
+    aiSettings = null
+  } else {
+    aiSettings = { apiKey: trimmed }
+    await saveAiSettings(aiSettings)
+  }
+  render()
 }
 
 function renderAddSubcategoryForm(categoryId: string): HTMLElement {
@@ -349,7 +427,9 @@ function renderImportButton(): HTMLElement {
 }
 
 async function init(): Promise<void> {
-  config = await getConfig()
+  const [loadedConfig, loadedAiSettings] = await Promise.all([getConfig(), getAiSettings()])
+  config = loadedConfig
+  aiSettings = loadedAiSettings
   render()
 }
 

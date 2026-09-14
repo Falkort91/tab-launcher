@@ -6,7 +6,7 @@
 
 body {
   margin: 0;
-  padding: 32px;
+  padding: 16px;
   background: var(--ink);
   color: var(--text);
   font-family:
@@ -17,13 +17,38 @@ body {
   font-size: 14px;
 }
 
+@media (min-width: 768px) {
+  body {
+    padding: 32px;
+  }
+}
+
+/* Contient la largeur du contenu sur les très grands écrans (le layout reste lisible). */
+@media (min-width: 1280px) {
+  body {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
 .page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 640px) {
+  .page-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+  }
 }
 
 .page-title {
@@ -38,6 +63,7 @@ body {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -62,13 +88,27 @@ body {
 
 .layout {
   display: flex;
-  gap: 32px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .layout {
+    flex-direction: row;
+    gap: 32px;
+    align-items: flex-start;
+  }
 }
 
 .sidebar {
-  width: 220px;
-  flex-shrink: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+  }
 }
 
 .sidebar ul {
@@ -143,6 +183,7 @@ body {
 
 .add-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
 }
@@ -188,9 +229,31 @@ body {
 
 .subcategory-header {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.ai-suggest-button {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.ai-suggest-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.ai-suggest-button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .subcategory-header input {
@@ -235,15 +298,37 @@ body {
 
 .link-list li {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
 }
 
+@media (min-width: 640px) {
+  .link-list li {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
 .link-list input[type='text'] {
-  width: 150px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .link-list input[type='text'] {
+    width: 150px;
+  }
 }
 
 .link-list input[type='url'] {
-  flex: 1;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .link-list input[type='url'] {
+    width: auto;
+    flex: 1;
+  }
 }
 
 .delete-button {
