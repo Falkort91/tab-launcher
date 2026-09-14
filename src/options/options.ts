@@ -1,3 +1,5 @@
+import { suggestGroupMeta } from '../lib/ai'
+import { AI_PROVIDERS, AI_PROVIDER_INFO, clearAiSettings, getAiSettings, saveAiSettings } from '../lib/aiSettings'
 import {
   addCategory,
   addLink,
@@ -12,12 +14,15 @@ import {
 import { parseConfig, serializeConfig } from '../lib/importExport'
 import { getConfig, saveConfig } from '../lib/storage'
 import { TAB_GROUP_COLOR_HEX, TAB_GROUP_COLORS } from '../lib/tabGroupColors'
+import type { AiProvider, AiSettings } from '../lib/aiSettings'
 import type { Category, Config, LinkItem, Subcategory } from '../lib/types'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
 let config: Config = []
 let selectedCategoryId: string | null = null
+let aiSettings: AiSettings | null = null
+let aiPanelOpen = false
 
 async function persist(next: Config): Promise<void> {
   config = next
@@ -39,10 +44,14 @@ function render(): void {
 
   const toolbar = document.createElement('div')
   toolbar.className = 'toolbar'
-  toolbar.append(renderExportButton(), renderImportButton())
+  toolbar.append(renderExportButton(), renderImportButton(), renderAiKeyButton())
   header.append(toolbar)
 
   app.append(header)
+
+  if (aiPanelOpen) {
+    app.append(renderAiSettingsPanel())
+  }
 
   const layout = document.createElement('div')
   layout.className = 'layout'
@@ -60,6 +69,9 @@ function renderSidebar(): HTMLElement {
     const button = document.createElement('button')
     button.textContent = category.name
     button.className = category.id === selectedCategoryId ? 'selected' : ''
+    // Adressable depuis le champ de nom dans le panneau de détail, pour le
+    // synchroniser en temps réel pendant la frappe (cf. renderCategoryHeader).
+    button.dataset.categoryId = category.id
     button.addEventListener('click', () => {
       selectedCategoryId = category.id
       render()
@@ -122,6 +134,12 @@ function renderCategoryHeader(category: Category): HTMLElement {
   nameInput.type = 'text'
   nameInput.className = 'category-name'
   nameInput.value = category.name
+  // Reflète la frappe dans la sidebar en direct, sans sauvegarder à chaque
+  // caractère : la persistance reste sur 'change' (blur/Enter) ci-dessous.
+  nameInput.addEventListener('input', () => {
+    const sidebarButton = app?.querySelector<HTMLButtonElement>(`.sidebar button[data-category-id="${category.id}"]`)
+    if (sidebarButton) sidebarButton.textContent = nameInput.value
+  })
   nameInput.addEventListener('change', () => {
     const name = nameInput.value.trim()
     if (!name) {
@@ -160,6 +178,15 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
     void persist(updateSubcategory(config, categoryId, subcategory.id, { name }))
   })
 
+  const suggestButton = document.createElement('button')
+  suggestButton.type = 'button'
+  suggestButton.className = 'ai-suggest-button'
+  suggestButton.textContent = '✨ Suggérer'
+  suggestButton.title = "Suggérer un nom et une couleur avec l'IA, à partir des liens de cette sous-catégorie"
+  suggestButton.addEventListener('click', () => {
+    void handleSuggest(categoryId, subcategory, suggestButton)
+  })
+
   const colorSwatches = document.createElement('div')
   colorSwatches.className = 'color-swatches'
   for (const color of TAB_GROUP_COLORS) {
@@ -184,7 +211,7 @@ function renderSubcategory(categoryId: string, subcategory: Subcategory): HTMLEl
 
   const header = document.createElement('div')
   header.className = 'subcategory-header'
-  header.append(nameInput, colorSwatches, deleteButton)
+  header.append(nameInput, suggestButton, colorSwatches, deleteButton)
   section.append(header)
 
   const linkList = document.createElement('ul')
@@ -246,6 +273,42 @@ function renderLink(categoryId: string, subcategoryId: string, link: LinkItem): 
   return item
 }
 
+async function handleSuggest(
+  categoryId: string,
+  subcategory: Subcategory,
+  button: HTMLButtonElement,
+): Promise<void> {
+  if (!aiSettings) {
+    alert(`Renseigne d'abord une clé API IA (bouton "Clé API IA" en haut de la page).`)
+    return
+  }
+  if (subcategory.links.length === 0) {
+    alert('Ajoute au moins un lien avant de demander une suggestion.')
+    return
+  }
+
+  // Pas de render() pendant l'appel : on désactive juste le bouton concerné, pour
+  // ne pas perdre le focus/la saisie en cours ailleurs dans le formulaire pendant
+  // l'attente réseau.
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = '…'
+
+  try {
+    const suggestion = await suggestGroupMeta(aiSettings, subcategory.links)
+    await persist(
+      updateSubcategory(config, categoryId, subcategory.id, {
+        name: suggestion.name,
+        color: suggestion.color,
+      }),
+    )
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'Suggestion IA impossible.')
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
 function renderAddSubcategoryForm(categoryId: string): HTMLElement {
   const form = document.createElement('form')
   form.className = 'add-row'
@@ -300,6 +363,153 @@ function renderAddLinkForm(categoryId: string, subcategoryId: string): HTMLEleme
   return form
 }
 
+// Les trois fournisseurs préfixent leurs clés API différemment — assez
+// distinctement pour présélectionner le bon fournisseur dès que l'utilisateur
+// colle sa clé, sans lui demander de cliquer sur un bouton au préalable. Le
+// préfixe générique 'sk-' d'OpenAI est vérifié en dernier pour ne pas
+// intercepter les clés Anthropic/OpenRouter, plus spécifiques.
+function detectProviderFromKey(key: string): AiProvider | null {
+  const trimmed = key.trim()
+  if (trimmed.startsWith('sk-ant-')) return 'anthropic'
+  if (trimmed.startsWith('sk-or-')) return 'openrouter'
+  if (trimmed.startsWith('sk-')) return 'openai'
+  return null
+}
+
+function renderAiKeyButton(): HTMLElement {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.textContent = aiSettings ? `Clé API IA (${AI_PROVIDER_INFO[aiSettings.provider].label}) ✓` : 'Clé API IA'
+  button.title = 'Fournisseur et clé API utilisés pour la suggestion de nom/couleur par IA'
+  button.addEventListener('click', () => {
+    aiPanelOpen = !aiPanelOpen
+    render()
+  })
+  return button
+}
+
+function renderAiSettingsPanel(): HTMLElement {
+  const panel = document.createElement('div')
+  panel.className = 'ai-settings-panel'
+
+  const title = document.createElement('div')
+  title.className = 'ai-settings-title'
+  title.textContent = 'Clé API IA'
+  panel.append(title)
+
+  let selectedProvider: AiProvider = aiSettings?.provider ?? 'openrouter'
+
+  const providerRow = document.createElement('div')
+  providerRow.className = 'ai-provider-choices'
+
+  const keyInput = document.createElement('input')
+  keyInput.type = 'password'
+  keyInput.autocomplete = 'off'
+  keyInput.placeholder = 'Colle ta clé API (le fournisseur est détecté automatiquement)'
+  keyInput.value = aiSettings?.apiKey ?? ''
+
+  const keyHint = document.createElement('a')
+  keyHint.className = 'ai-key-hint'
+  keyHint.target = '_blank'
+  keyHint.rel = 'noopener noreferrer'
+
+  function updateHint(): void {
+    const info = AI_PROVIDER_INFO[selectedProvider]
+    keyHint.href = info.keyUrl
+    keyHint.textContent = `Obtenir une clé ${info.label} →`
+  }
+
+  function selectProvider(provider: AiProvider, resetKeyField: boolean): void {
+    selectedProvider = provider
+    for (const btn of providerRow.querySelectorAll('button')) {
+      btn.classList.toggle('selected', btn.dataset.provider === provider)
+    }
+    updateHint()
+    if (resetKeyField) {
+      keyInput.value = aiSettings?.provider === provider ? aiSettings.apiKey : ''
+    }
+  }
+
+  for (const provider of AI_PROVIDERS) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.dataset.provider = provider
+    button.className = provider === selectedProvider ? 'ai-provider-button selected' : 'ai-provider-button'
+    button.textContent = AI_PROVIDER_INFO[provider].label
+    // Sélection manuelle explicite : contrairement à la détection automatique
+    // ci-dessous, on peut ici se permettre d'écraser le champ clé avec celle
+    // déjà enregistrée pour ce fournisseur (ou vide), l'utilisateur choisit
+    // sciemment de changer de fournisseur.
+    button.addEventListener('click', () => selectProvider(provider, true))
+    providerRow.append(button)
+  }
+  updateHint()
+
+  // Dès que la clé collée correspond à un préfixe connu, on présélectionne le
+  // bon fournisseur sans toucher au champ en cours de frappe.
+  keyInput.addEventListener('input', () => {
+    const detected = detectProviderFromKey(keyInput.value)
+    if (detected && detected !== selectedProvider) {
+      selectProvider(detected, false)
+    }
+  })
+
+  panel.append(providerRow, keyInput, keyHint)
+
+  const actions = document.createElement('div')
+  actions.className = 'ai-settings-actions'
+
+  const saveButton = document.createElement('button')
+  saveButton.type = 'button'
+  saveButton.textContent = 'Enregistrer'
+  saveButton.addEventListener('click', () => {
+    void handleSaveAiSettings(selectedProvider, keyInput.value)
+  })
+  actions.append(saveButton)
+
+  const cancelButton = document.createElement('button')
+  cancelButton.type = 'button'
+  cancelButton.textContent = 'Annuler'
+  cancelButton.addEventListener('click', () => {
+    aiPanelOpen = false
+    render()
+  })
+  actions.append(cancelButton)
+
+  if (aiSettings) {
+    const clearButton = document.createElement('button')
+    clearButton.type = 'button'
+    clearButton.className = 'ai-clear-button'
+    clearButton.textContent = 'Supprimer la clé'
+    clearButton.addEventListener('click', () => {
+      void handleClearAiSettings()
+    })
+    actions.append(clearButton)
+  }
+
+  panel.append(actions)
+  return panel
+}
+
+async function handleSaveAiSettings(provider: AiProvider, apiKeyRaw: string): Promise<void> {
+  const trimmed = apiKeyRaw.trim()
+  if (!trimmed) {
+    alert('Renseigne une clé API, ou clique sur "Annuler".')
+    return
+  }
+  aiSettings = { provider, apiKey: trimmed }
+  await saveAiSettings(aiSettings)
+  aiPanelOpen = false
+  render()
+}
+
+async function handleClearAiSettings(): Promise<void> {
+  await clearAiSettings()
+  aiSettings = null
+  aiPanelOpen = false
+  render()
+}
+
 function renderExportButton(): HTMLElement {
   const button = document.createElement('button')
   button.textContent = 'Exporter (JSON)'
@@ -349,7 +559,9 @@ function renderImportButton(): HTMLElement {
 }
 
 async function init(): Promise<void> {
-  config = await getConfig()
+  const [loadedConfig, loadedAiSettings] = await Promise.all([getConfig(), getAiSettings()])
+  config = loadedConfig
+  aiSettings = loadedAiSettings
   render()
 }
 

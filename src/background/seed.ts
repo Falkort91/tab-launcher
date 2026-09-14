@@ -31,6 +31,16 @@ export const DEFAULT_CONFIG: Config = [
           { id: 'tech-chrome-ext', label: 'Chrome Extensions Docs', url: 'https://developer.chrome.com/docs/extensions/' },
         ],
       },
+      {
+        id: 'tech-watch-ai-tools',
+        name: 'Outils IA',
+        color: 'purple',
+        links: [
+          { id: 'tech-openrouter', label: 'OpenRouter', url: 'https://openrouter.ai/keys' },
+          { id: 'tech-openai', label: 'OpenAI Platform', url: 'https://platform.openai.com/api-keys' },
+          { id: 'tech-anthropic', label: 'Anthropic Console', url: 'https://console.anthropic.com/settings/keys' },
+        ],
+      },
     ],
   },
 ]
