@@ -37,10 +37,6 @@ une première expérience concrète sur le sujet.
   saisis via le bouton "Clé API IA", stockés localement (jamais inclus dans
   l'export JSON). OpenRouter est le plus simple pour tester : le modèle utilisé
   y est gratuit.
-- Aucune donnée sensible stockée — pas de credentials, pas de connexion
-  automatique aux comptes (voir la spec pour la justification de ce choix).
-  Exception : la clé API IA ci-dessus, propre à l'utilisateur et utilisée
-  uniquement pour ses propres appels.
 
 ## Installation (sans compiler)
 
