@@ -1,10 +1,15 @@
 # Tab Launcher
 
 Extension Chrome (Manifest V3) qui ouvre un ensemble d'onglets pré-configurés en un
-clic, organisés par catégorie et sous-catégorie (ex : "Recherche d'emploi",
-"Veille tech > Actualités & Docs"). Chaque sous-catégorie ouvre tous ses liens
-d'un coup et les regroupe automatiquement dans un vrai groupe d'onglets Chrome,
-nommé et coloré.
+clic, organisés par catégorie et sous-catégorie — une catégorie peut regrouper
+plusieurs sous-catégories (ex : "Veille tech" contient "Actualités & Docs" et
+"Outils IA"). Chaque sous-catégorie ouvre tous ses liens d'un coup et les
+regroupe automatiquement dans un vrai groupe d'onglets Chrome, nommé et coloré.
+
+> **À noter :** les catégories "Recherche d'emploi" et "Veille tech" visibles à la
+> première installation ne sont que des **données de démonstration**, créées pour
+> montrer l'extension en action immédiatement. Rien n'est codé en dur : tout se
+> gère (ajout/édition/suppression) depuis la page d'options.
 
 Projet réalisé pour apprendre le développement d'extensions Chrome et démontrer
 une première expérience concrète sur le sujet.
@@ -20,21 +25,17 @@ une première expérience concrète sur le sujet.
 - **Export / Import JSON** : sauvegarde la configuration dans un fichier, ou la
   restaure (remplace intégralement la configuration existante).
 - **Suggestion IA** (page d'options) : le bouton "✨ Suggérer" sur une
-  sous-catégorie appelle un LLM (via [OpenRouter](https://openrouter.ai)) avec
-  les liens déjà ajoutés, et propose un nom et une couleur de groupe. Nécessite
-  une clé API OpenRouter, saisie via le bouton "Clé API IA" et stockée
-  localement (jamais incluse dans l'export JSON).
+  sous-catégorie appelle un LLM avec les liens déjà ajoutés, et propose un nom
+  et une couleur de groupe. Fournisseur au choix — [OpenRouter](https://openrouter.ai/keys),
+  [Anthropic](https://console.anthropic.com/settings/keys) ou
+  [OpenAI](https://platform.openai.com/api-keys) — sélectionné et sa clé API
+  saisis via le bouton "Clé API IA", stockés localement (jamais inclus dans
+  l'export JSON). OpenRouter est le plus simple pour tester : le modèle utilisé
+  y est gratuit.
 - Aucune donnée sensible stockée — pas de credentials, pas de connexion
   automatique aux comptes (voir la spec pour la justification de ce choix).
-  Exception : la clé API OpenRouter ci-dessus, propre à l'utilisateur et
-  utilisée uniquement pour ses propres appels IA.
-
-À la première installation, deux catégories d'exemple sont créées ("Recherche
-d'emploi", "Veille tech") pour montrer l'extension en action immédiatement.
-Ce ne sont que des données de démonstration : **tout est entièrement
-configurable** depuis la page d'options (ajout/édition/suppression de
-catégories, sous-catégories et liens) — rien n'est codé en dur côté
-utilisateur final.
+  Exception : la clé API IA ci-dessus, propre à l'utilisateur et utilisée
+  uniquement pour ses propres appels.
 
 ## Installation (sans compiler)
 

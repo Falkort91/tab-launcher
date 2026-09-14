@@ -1,6 +1,17 @@
 const AI_SETTINGS_KEY = 'aiSettings'
 
+export type AiProvider = 'openrouter' | 'anthropic' | 'openai'
+
+export const AI_PROVIDERS: AiProvider[] = ['openrouter', 'anthropic', 'openai']
+
+export const AI_PROVIDER_INFO: Record<AiProvider, { label: string; keyUrl: string }> = {
+  openrouter: { label: 'OpenRouter', keyUrl: 'https://openrouter.ai/keys' },
+  anthropic: { label: 'Anthropic (Claude)', keyUrl: 'https://console.anthropic.com/settings/keys' },
+  openai: { label: 'OpenAI', keyUrl: 'https://platform.openai.com/api-keys' },
+}
+
 export interface AiSettings {
+  provider: AiProvider
   apiKey: string
 }
 
@@ -9,13 +20,14 @@ export interface AiSettings {
 // qui est pensé pour être partagé ou versionné.
 export async function getAiSettings(): Promise<AiSettings | null> {
   const data = await chrome.storage.local.get(AI_SETTINGS_KEY)
-  const value = data[AI_SETTINGS_KEY]
+  const value = data[AI_SETTINGS_KEY] as Partial<AiSettings> | undefined
 
   if (
     typeof value !== 'object' ||
     value === null ||
-    typeof (value as Partial<AiSettings>).apiKey !== 'string' ||
-    (value as AiSettings).apiKey.trim() === ''
+    !AI_PROVIDERS.includes(value.provider as AiProvider) ||
+    typeof value.apiKey !== 'string' ||
+    value.apiKey.trim() === ''
   ) {
     return null
   }

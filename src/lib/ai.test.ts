@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseSuggestion, suggestGroupMeta } from './ai'
+import type { AiSettings } from './aiSettings'
 import type { LinkItem } from './types'
 
 const links: LinkItem[] = [
@@ -26,51 +27,96 @@ describe('suggestGroupMeta', () => {
   it('throws without calling fetch when there are no links', async () => {
     vi.stubGlobal('fetch', vi.fn())
 
-    await expect(suggestGroupMeta('sk-test', [])).rejects.toThrow('Ajoute au moins un lien')
+    await expect(suggestGroupMeta({ provider: 'openrouter', apiKey: 'sk-test' }, [])).rejects.toThrow(
+      'Ajoute au moins un lien',
+    )
     expect(fetch).not.toHaveBeenCalled()
   })
 
-  it('returns the parsed suggestion on a successful call', async () => {
-    stubFetchJson(200, {
-      choices: [{ message: { content: '{"name": "Recherche emploi", "color": "blue"}' } }],
-    })
+  describe.each<{ provider: AiSettings['provider']; url: string }>([
+    { provider: 'openrouter', url: 'https://openrouter.ai/api/v1/chat/completions' },
+    { provider: 'openai', url: 'https://api.openai.com/v1/chat/completions' },
+  ])('with the OpenAI-compatible provider "$provider"', ({ provider, url }) => {
+    it('returns the parsed suggestion and calls the right endpoint with a bearer token', async () => {
+      stubFetchJson(200, {
+        choices: [{ message: { content: '{"name": "Recherche emploi", "color": "blue"}' } }],
+      })
 
-    await expect(suggestGroupMeta('sk-test', links)).resolves.toEqual({
-      name: 'Recherche emploi',
-      color: 'blue',
+      await expect(suggestGroupMeta({ provider, apiKey: 'sk-test' }, links)).resolves.toEqual({
+        name: 'Recherche emploi',
+        color: 'blue',
+      })
+
+      const [calledUrl, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+      expect(calledUrl).toBe(url)
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer sk-test')
     })
   })
 
-  it('sends the api key as a bearer token', async () => {
-    stubFetchJson(200, {
-      choices: [{ message: { content: '{"name": "X", "color": "grey"}' } }],
+  describe('with the anthropic provider', () => {
+    it('returns the parsed suggestion from a forced tool_use block, calling the anthropic endpoint with x-api-key', async () => {
+      stubFetchJson(200, {
+        content: [{ type: 'tool_use', name: 'set_group_suggestion', input: { name: 'Recherche emploi', color: 'blue' } }],
+      })
+
+      await expect(suggestGroupMeta({ provider: 'anthropic', apiKey: 'sk-ant-test' }, links)).resolves.toEqual({
+        name: 'Recherche emploi',
+        color: 'blue',
+      })
+
+      const [calledUrl, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
+      expect(calledUrl).toBe('https://api.anthropic.com/v1/messages')
+      const headers = init.headers as Record<string, string>
+      expect(headers['x-api-key']).toBe('sk-ant-test')
+      expect(headers['anthropic-dangerous-direct-browser-access']).toBe('true')
+
+      const body = JSON.parse(init.body as string) as { tool_choice?: { type: string; name: string } }
+      expect(body.tool_choice).toEqual({ type: 'tool', name: 'set_group_suggestion' })
     })
 
-    await suggestGroupMeta('sk-test', links)
+    it('falls back to a text content block if the model answers in free text anyway', async () => {
+      stubFetchJson(200, {
+        content: [{ type: 'text', text: '{"name": "Recherche emploi", "color": "blue"}' }],
+      })
 
-    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit]
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer sk-test')
+      await expect(suggestGroupMeta({ provider: 'anthropic', apiKey: 'sk-ant-test' }, links)).resolves.toEqual({
+        name: 'Recherche emploi',
+        color: 'blue',
+      })
+    })
+
+    it('throws when the response has neither a tool_use nor a text block', async () => {
+      stubFetchJson(200, { content: [{ type: 'thinking' }] })
+
+      await expect(suggestGroupMeta({ provider: 'anthropic', apiKey: 'sk-ant-test' }, links)).rejects.toThrow(
+        'Réponse IA vide',
+      )
+    })
   })
 
   it('throws a specific error on a 401 response', async () => {
     stubFetchJson(401, {})
 
-    await expect(suggestGroupMeta('sk-test', links)).rejects.toThrow('invalide ou expirée')
+    await expect(suggestGroupMeta({ provider: 'openrouter', apiKey: 'sk-test' }, links)).rejects.toThrow(
+      'invalide ou expirée',
+    )
   })
 
   it('throws on other non-ok responses', async () => {
     stubFetchJson(500, {})
 
-    await expect(suggestGroupMeta('sk-test', links)).rejects.toThrow('code 500')
+    await expect(suggestGroupMeta({ provider: 'openrouter', apiKey: 'sk-test' }, links)).rejects.toThrow('code 500')
   })
 
   it('throws when the response has no message content', async () => {
     stubFetchJson(200, { choices: [] })
 
-    await expect(suggestGroupMeta('sk-test', links)).rejects.toThrow('Réponse IA vide')
+    await expect(suggestGroupMeta({ provider: 'openrouter', apiKey: 'sk-test' }, links)).rejects.toThrow(
+      'Réponse IA vide',
+    )
   })
 
-  it('throws when fetch rejects (network error)', async () => {
+  it('throws when fetch rejects (network error or CORS block)', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
@@ -78,7 +124,9 @@ describe('suggestGroupMeta', () => {
       }),
     )
 
-    await expect(suggestGroupMeta('sk-test', links)).rejects.toThrow('Impossible de contacter')
+    await expect(suggestGroupMeta({ provider: 'openrouter', apiKey: 'sk-test' }, links)).rejects.toThrow(
+      'Impossible de contacter',
+    )
   })
 })
 
@@ -99,8 +147,22 @@ describe('parseSuggestion', () => {
     expect(parseSuggestion('{"name": "X", "color": "BLUE"}')).toEqual({ name: 'X', color: 'blue' })
   })
 
-  it('falls back to grey when the color is not part of the known palette', () => {
-    expect(parseSuggestion('{"name": "X", "color": "turquoise"}')).toEqual({ name: 'X', color: 'grey' })
+  it.each([
+    ['gray', 'grey'],
+    ['navy', 'blue'],
+    ['indigo', 'blue'],
+    ['teal', 'cyan'],
+    ['violet', 'purple'],
+    ['magenta', 'pink'],
+    ['amber', 'yellow'],
+    ['lime', 'green'],
+    ['crimson', 'red'],
+  ])('maps the common synonym "%s" to "%s"', (synonym, expected) => {
+    expect(parseSuggestion(`{"name": "X", "color": "${synonym}"}`)).toEqual({ name: 'X', color: expected })
+  })
+
+  it('falls back to grey when the color is not part of the known palette or its synonyms', () => {
+    expect(parseSuggestion('{"name": "X", "color": "chartreuse"}')).toEqual({ name: 'X', color: 'grey' })
   })
 
   it('throws when no JSON object can be found', () => {

@@ -33,7 +33,7 @@ export default defineManifest({
     type: 'module',
   },
   permissions: ['storage', 'tabs', 'tabGroups'],
-  // Nécessaire pour l'appel fetch vers OpenRouter (suggestion IA de nom/couleur
-  // de groupe) déclenché depuis la page d'options — cf. src/lib/ai.ts.
-  host_permissions: ['https://openrouter.ai/*'],
+  // Nécessaire pour l'appel fetch vers le fournisseur IA choisi (suggestion de
+  // nom/couleur de groupe) déclenché depuis la page d'options — cf. src/lib/ai.ts.
+  host_permissions: ['https://openrouter.ai/*', 'https://api.anthropic.com/*', 'https://api.openai.com/*'],
 })

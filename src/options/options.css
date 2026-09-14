@@ -86,6 +86,97 @@ body {
   background: var(--surface-hover);
 }
 
+.ai-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.ai-settings-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ai-provider-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-provider-button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ai-provider-button:hover {
+  background: var(--surface-hover);
+}
+
+.ai-provider-button.selected {
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  color: #fff;
+  border-color: transparent;
+}
+
+.ai-settings-panel input[type='password'] {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ai-key-hint {
+  display: block;
+  width: fit-content;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.ai-key-hint:hover {
+  text-decoration: underline;
+}
+
+.ai-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-settings-actions button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ai-settings-actions button:hover {
+  background: var(--surface-hover);
+}
+
+.ai-settings-actions .ai-clear-button {
+  color: var(--danger);
+}
+
 .layout {
   display: flex;
   flex-direction: column;
@@ -166,19 +257,22 @@ body {
   font-size: 19px;
   font-weight: 600;
   padding: 5px 9px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
   font-family: inherit;
   flex: 1;
   min-width: 0;
 }
 
-.category-name:hover,
+.category-name:hover {
+  background: var(--surface-hover);
+}
+
 .category-name:focus {
-  border-color: var(--border);
-  outline: none;
+  outline: 2px solid var(--accent-2);
+  outline-offset: -1px;
 }
 
 .add-row {
