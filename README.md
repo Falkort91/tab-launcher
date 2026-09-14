@@ -6,6 +6,8 @@ plusieurs sous-catégories (ex : "Veille tech" contient "Actualités & Docs" et
 "Outils IA"). Chaque sous-catégorie ouvre tous ses liens d'un coup et les
 regroupe automatiquement dans un vrai groupe d'onglets Chrome, nommé et coloré.
 
+![Démo : ouverture d'un groupe d'onglets depuis le popup](assets/demo.gif)
+
 > **À noter :** les catégories "Recherche d'emploi" et "Veille tech" visibles à la
 > première installation ne sont que des **données de démonstration**, créées pour
 > montrer l'extension en action immédiatement. Rien n'est codé en dur : tout se
@@ -22,6 +24,9 @@ une première expérience concrète sur le sujet.
 - **Page d'options** : gestion complète (ajout/édition/suppression) des catégories,
   sous-catégories et liens, dans une interface deux colonnes (liste à gauche,
   détail éditable à droite).
+
+  ![Démo : gestion des catégories et sous-catégories dans la page d'options](assets/demo-options.gif)
+
 - **Export / Import JSON** : sauvegarde la configuration dans un fichier, ou la
   restaure (remplace intégralement la configuration existante).
 - **Suggestion IA** (page d'options) : le bouton "✨ Suggérer" sur une
