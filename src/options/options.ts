@@ -24,19 +24,6 @@ let selectedCategoryId: string | null = null
 let aiSettings: AiSettings | null = null
 let aiPanelOpen = false
 
-// Les trois fournisseurs préfixent leurs clés API différemment — assez
-// distinctement pour présélectionner le bon fournisseur dès que l'utilisateur
-// colle sa clé, sans lui demander de cliquer sur un bouton au préalable. Le
-// préfixe générique 'sk-' d'OpenAI est vérifié en dernier pour ne pas
-// intercepter les clés Anthropic/OpenRouter, plus spécifiques.
-function detectProviderFromKey(key: string): AiProvider | null {
-  const trimmed = key.trim()
-  if (trimmed.startsWith('sk-ant-')) return 'anthropic'
-  if (trimmed.startsWith('sk-or-')) return 'openrouter'
-  if (trimmed.startsWith('sk-')) return 'openai'
-  return null
-}
-
 async function persist(next: Config): Promise<void> {
   config = next
   await saveConfig(config)
@@ -322,6 +309,73 @@ async function handleSuggest(
   }
 }
 
+function renderAddSubcategoryForm(categoryId: string): HTMLElement {
+  const form = document.createElement('form')
+  form.className = 'add-row'
+
+  const nameInput = document.createElement('input')
+  nameInput.type = 'text'
+  nameInput.placeholder = 'Nouvelle sous-catégorie'
+  nameInput.required = true
+
+  const submit = document.createElement('button')
+  submit.type = 'submit'
+  submit.textContent = '+ sous-catégorie'
+
+  form.append(nameInput, submit)
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const name = nameInput.value.trim()
+    if (!name) return
+    void persist(addSubcategory(config, categoryId, { name, color: 'grey' }))
+  })
+
+  return form
+}
+
+function renderAddLinkForm(categoryId: string, subcategoryId: string): HTMLElement {
+  const form = document.createElement('form')
+  form.className = 'add-row'
+
+  const labelInput = document.createElement('input')
+  labelInput.type = 'text'
+  labelInput.placeholder = 'Nom du lien'
+  labelInput.required = true
+
+  const urlInput = document.createElement('input')
+  urlInput.type = 'url'
+  urlInput.placeholder = 'https://...'
+  urlInput.required = true
+
+  const submit = document.createElement('button')
+  submit.type = 'submit'
+  submit.textContent = '+ lien'
+
+  form.append(labelInput, urlInput, submit)
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const label = labelInput.value.trim()
+    const url = urlInput.value.trim()
+    if (!label || !url) return
+    void persist(addLink(config, categoryId, subcategoryId, { label, url }))
+  })
+
+  return form
+}
+
+// Les trois fournisseurs préfixent leurs clés API différemment — assez
+// distinctement pour présélectionner le bon fournisseur dès que l'utilisateur
+// colle sa clé, sans lui demander de cliquer sur un bouton au préalable. Le
+// préfixe générique 'sk-' d'OpenAI est vérifié en dernier pour ne pas
+// intercepter les clés Anthropic/OpenRouter, plus spécifiques.
+function detectProviderFromKey(key: string): AiProvider | null {
+  const trimmed = key.trim()
+  if (trimmed.startsWith('sk-ant-')) return 'anthropic'
+  if (trimmed.startsWith('sk-or-')) return 'openrouter'
+  if (trimmed.startsWith('sk-')) return 'openai'
+  return null
+}
+
 function renderAiKeyButton(): HTMLElement {
   const button = document.createElement('button')
   button.type = 'button'
@@ -454,60 +508,6 @@ async function handleClearAiSettings(): Promise<void> {
   aiSettings = null
   aiPanelOpen = false
   render()
-}
-
-function renderAddSubcategoryForm(categoryId: string): HTMLElement {
-  const form = document.createElement('form')
-  form.className = 'add-row'
-
-  const nameInput = document.createElement('input')
-  nameInput.type = 'text'
-  nameInput.placeholder = 'Nouvelle sous-catégorie'
-  nameInput.required = true
-
-  const submit = document.createElement('button')
-  submit.type = 'submit'
-  submit.textContent = '+ sous-catégorie'
-
-  form.append(nameInput, submit)
-  form.addEventListener('submit', (event) => {
-    event.preventDefault()
-    const name = nameInput.value.trim()
-    if (!name) return
-    void persist(addSubcategory(config, categoryId, { name, color: 'grey' }))
-  })
-
-  return form
-}
-
-function renderAddLinkForm(categoryId: string, subcategoryId: string): HTMLElement {
-  const form = document.createElement('form')
-  form.className = 'add-row'
-
-  const labelInput = document.createElement('input')
-  labelInput.type = 'text'
-  labelInput.placeholder = 'Nom du lien'
-  labelInput.required = true
-
-  const urlInput = document.createElement('input')
-  urlInput.type = 'url'
-  urlInput.placeholder = 'https://...'
-  urlInput.required = true
-
-  const submit = document.createElement('button')
-  submit.type = 'submit'
-  submit.textContent = '+ lien'
-
-  form.append(labelInput, urlInput, submit)
-  form.addEventListener('submit', (event) => {
-    event.preventDefault()
-    const label = labelInput.value.trim()
-    const url = urlInput.value.trim()
-    if (!label || !url) return
-    void persist(addLink(config, categoryId, subcategoryId, { label, url }))
-  })
-
-  return form
 }
 
 function renderExportButton(): HTMLElement {
